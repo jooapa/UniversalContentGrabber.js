@@ -74,7 +74,14 @@ const processReddit = async (url) => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(combinedBlob);
     // Set the name of the reddit url file to be downloaded
-    a.download = `${input.split("/").pop()}`;
+    const parts = url.split("/");
+    if (parts.length >= 2) {
+      const secondLastPart = parts[parts.length - 2];
+      a.download = secondLastPart + ".mp4";
+    } else {
+      console.log("No second-to-last slash found in the URL.");
+      a.download = "reddit_video.mp4";
+    }
     a.style.display = "none";
     document.body.appendChild(a);
     a.click();
@@ -85,17 +92,39 @@ const processReddit = async (url) => {
   }
 };
 
+const processTwitter = async (url) => {
+    const response = await fetch(url);
+    const data = await response.text();
+    const video_url = data.match(/<meta property="og:video" content="(.*?)">/)[1];
+
+    const videoResponse = await fetch(video_url);
+    const videoBlob = await videoResponse.blob();
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(videoBlob);
+    a.download = "twitter_video.mp4";
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
 const detectSite = (url) => {
     if (url.includes("reddit")) {
         processReddit(url);
     }
+    if (url.includes("twitter")) {
+        processTwitter(url);
+    }
     return "unknown";
 };
-
 
 const checkWebsite = (url) => {
     if (url.includes("reddit")) {
         return "reddit";
+    }
+    if (url.includes("twitter") || url.includes("x")) {
+        return "twitter";
     }
     return false
 }
